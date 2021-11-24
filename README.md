@@ -27,5 +27,5 @@ PS D:\code\AudioSwitch\target\debug> .\audio_switch.exe switch
 ```
 
 
-### Notes
+### Other
 You can also create a shortcut to the command and pin it to your start menu or taskbar for easily switch. Or bind the command to some hotkey tool.
