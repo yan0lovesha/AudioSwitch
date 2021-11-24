@@ -47,16 +47,24 @@ fn list_ask() -> Result<()> {
         println!("{} {} - {}", if device.is_default {"*"} else {" "}, index, device.display_name);
     }
 
+    println!("Please input the index of above devices which you want to switch to:");
+
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
     let selected_index: usize = input.trim().parse().unwrap();
-    let selected_device = &devices[selected_index];
-
-    set_default_audio_device(selected_device.id)?;
-
-    let devices_switched = get_audio_device_list()?;
-    for (index, device) in devices_switched.iter().enumerate(){
-        println!("{} {} - {}", if device.is_default {"*"} else {" "}, index, device.display_name);
+    if selected_index < devices.len() {
+        let selected_device = &devices[selected_index];
+    
+        set_default_audio_device(selected_device.id)?;
+    
+        println!("Switched to your selected device:");
+        let devices_switched = get_audio_device_list()?;
+        for (index, device) in devices_switched.iter().enumerate(){
+            println!("{} {} - {}", if device.is_default {"*"} else {" "}, index, device.display_name);
+        }
+    }
+    else {
+        println!("Selection out of range.");
     }
 
     Ok(())
@@ -101,8 +109,7 @@ fn set_default_audio_device(device_id: PWSTR) -> Result<()> {
     unsafe {
         CoInitialize(std::ptr::null_mut())?;
         let p_policy_config: IPolicyConfigVista = CoCreateInstance(&CPolicyConfigVistaClient, None, CLSCTX_ALL)?;
-        let res = p_policy_config.SetDefaultEndpoint(device_id, eConsole);
-        println!("{:?}", res);
+        p_policy_config.SetDefaultEndpoint(device_id, eConsole)?;
     }
     Ok({})
 }
