@@ -2,7 +2,7 @@
 A tool built by Rust that can switch default audio playback device on windows.
 
 ## How to use
-### specify which device you want to use
+### specify which device you want to use interactively
 Execute it directly will list the active audio playback devices and you can input an index to switch to a the specified device.
 PS D:\code\AudioSwitch\target\debug> .\audio_switch.exe
 ```
@@ -16,7 +16,7 @@ Switched to your selected device:
 ```
 
 ### Switch to next device
-Execute it with a argument switch. It will switch to next device.
+Execute it with a argument `switch`. It will switch to next device.
 ```
 PS D:\code\AudioSwitch\target\debug> .\audio_switch.exe switch
   0 - Speakers (High Definition Audio Device)
@@ -24,6 +24,14 @@ PS D:\code\AudioSwitch\target\debug> .\audio_switch.exe switch
 PS D:\code\AudioSwitch\target\debug> .\audio_switch.exe switch
 * 0 - Speakers (High Definition Audio Device)
   1 - Headset Earphone (Sennheiser BTD 800 USB)
+```
+### Show windows message box after switch
+Execute with an addition argument `showmsg`. It will popup a windows message box to show which device is currently in use after switching.
+Example:
+```
+PS D:\code\AudioSwitch\target\debug> .\audio_switch.exe showmsg
+
+PS D:\code\AudioSwitch\target\debug> .\audio_switch.exe switch showmsg
 ```
 
 

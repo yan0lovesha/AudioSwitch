@@ -1,4 +1,5 @@
 mod policy_config;
+
 use policy_config::*;
 use windows::{
     core::*,
@@ -6,6 +7,7 @@ use windows::{
     Win32::UI::Shell::PropertiesSystem::*,
     Win32::System::Com::*,
     Win32::Media::Audio::*,
+    Win32::UI::WindowsAndMessaging::*,
 };
 
 struct AudioDevice {
@@ -14,25 +16,28 @@ struct AudioDevice {
     is_default: bool
 }
 
-fn main() -> Result<()> {
-    let command = match std::env::args().len() {
-        0 | 1 => "".to_string(),
-        _ => std::env::args().nth(1).unwrap()
-    };
+ fn main() -> Result<()> {
+    let args_vec: Vec<String> = std::env::args().skip(1).collect();
 
-    match command.as_ref() {
-        "switch" => switch_audio_device(),
-        _ => list_ask()
+    match (args_vec.get(0).map(|s| s.as_str()), args_vec.get(1).map(|s| s.as_str())) {
+        (None, None) => list_ask(false),
+        (Some("showmsg"), None) => list_ask(true),
+        (Some("switch"), None) => switch_audio_device(false),
+        (Some("switch"), Some("showmsg")) => switch_audio_device(true),
+        _ => {
+            println!("Invalid argument");
+            Ok(())
+        },
     }
-}
+ }
 
-fn switch_audio_device() -> Result<()> {
+fn switch_audio_device(show_msg_box: bool) -> Result<()> {
     let devices = get_audio_device_list()?;
     let last_index = if devices.len() == 1 { 0 } else { devices.len() - 1 };
     let default_index = devices.iter().position(| device | device.is_default).unwrap();
     let target_index = if default_index == last_index { 0 } else { default_index + 1 };
 
-    set_default_audio_device(devices[target_index].id)?;
+    set_default_audio_device(devices[target_index].id, &devices[target_index].display_name, show_msg_box)?;
 
     for (index, device) in devices.iter().enumerate(){
         println!("{} {} - {}", if device.is_default {"*"} else {" "}, index, device.display_name);
@@ -41,7 +46,7 @@ fn switch_audio_device() -> Result<()> {
     Ok(())
 }
 
-fn list_ask() -> Result<()> {
+fn list_ask(show_msg_box: bool) -> Result<()> {
     let devices = get_audio_device_list()?;
     for (index, device) in devices.iter().enumerate(){
         println!("{} {} - {}", if device.is_default {"*"} else {" "}, index, device.display_name);
@@ -55,7 +60,7 @@ fn list_ask() -> Result<()> {
     if selected_index < devices.len() {
         let selected_device = &devices[selected_index];
     
-        set_default_audio_device(selected_device.id)?;
+        set_default_audio_device(selected_device.id, &selected_device.display_name, show_msg_box)?;
     
         println!("Switched to your selected device:");
         let devices_switched = get_audio_device_list()?;
@@ -105,11 +110,16 @@ fn get_audio_device_list() -> Result<Vec<AudioDevice>> {
     }
 }
 
-fn set_default_audio_device(device_id: PWSTR) -> Result<()> {
+fn set_default_audio_device(device_id: PWSTR, device_name: &String, show_msg_box: bool) -> Result<()> {
     unsafe {
         CoInitialize(std::ptr::null_mut())?;
         let p_policy_config: IPolicyConfigVista = CoCreateInstance(&CPolicyConfigVistaClient, None, CLSCTX_ALL)?;
         p_policy_config.SetDefaultEndpoint(device_id, eConsole)?;
+        
+        if show_msg_box {
+            let msg = &format!("{} {}", "Switched to:", &device_name)[..];
+            MessageBoxA(None, msg, "Switched", MB_OK);
+        }
     }
     Ok({})
 }
