@@ -8,9 +8,8 @@ edition = "2021"
 [dependencies]
 
 [dependencies.windows]
-version = "0.28.0"
+version = "0.39.0"
 features = [
-    "alloc",
     "Data_Xml_Dom",
     "Win32_Foundation",
     "Win32_Security",

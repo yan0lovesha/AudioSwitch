@@ -3,7 +3,6 @@ mod policy_config;
 use policy_config::*;
 use windows::{
     core::*,
-    Win32::Foundation::*,
     Win32::UI::Shell::PropertiesSystem::*,
     Win32::System::Com::*,
     Win32::Media::Audio::*,
@@ -93,7 +92,8 @@ fn get_audio_device_list() -> Result<Vec<AudioDevice>> {
             let device_id = device.GetId()?;
             let device_id_str = from_pwstr(device_id);
 
-            let property_store: IPropertyStore = device.OpenPropertyStore(0)?;
+            let property_store: IPropertyStore = device.OpenPropertyStore(StructuredStorage::STGM_DIRECT)?;
+            
             let friendly_name = property_store.GetValue(&windows::Win32::Devices::FunctionDiscovery::PKEY_Device_FriendlyName)?;
             let friendly_name_pwstr = friendly_name.Anonymous.Anonymous.Anonymous.pwszVal;
 
@@ -117,8 +117,8 @@ fn set_default_audio_device(device_id: PWSTR, device_name: &String, show_msg_box
         p_policy_config.SetDefaultEndpoint(device_id, eConsole)?;
         
         if show_msg_box {
-            let msg = &format!("{} {}", "Switched to:", &device_name)[..];
-            MessageBoxA(None, msg, "Switched", MB_OK);
+            let msg = &format!("{} {}\0", "Switched to:", &device_name)[..];
+            MessageBoxA(None, ::windows::core::PCSTR::from_raw((*msg).as_ptr()), s!("Switched"), MB_OK);
         }
     }
     Ok({})
@@ -130,4 +130,10 @@ fn from_pwstr(p: PWSTR) -> String {
 
     // And convert from UTF-16 to Rust's native encoding
     String::from_utf16_lossy(buffer)
+}
+
+
+#[test]
+fn test_show_msg() {
+    let _ = switch_audio_device(true);
 }
